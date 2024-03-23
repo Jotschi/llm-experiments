@@ -1,1 +1,5 @@
 venv
+wandb
+*.pt
+*.pth
+*.safetensors
