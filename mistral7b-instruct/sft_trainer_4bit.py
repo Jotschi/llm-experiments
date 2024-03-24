@@ -22,8 +22,10 @@ from transformers import AutoModelForCausalLM, BitsAndBytesConfig, HfArgumentPar
 from trl import SFTTrainer
 
 
+#https://github.com/neuralwork/instruct-finetune-mistral/blob/main/finetune_model.py
 tqdm.pandas()
 
+output_name = "r256-b4-a16-seq512-l2.0e-5_reformat"
 
 # Define and parse arguments.
 @dataclass
@@ -32,7 +34,7 @@ class ScriptArguments:
     The name of the Casual LM model we wish to fine with SFTTrainer
     """
 
-    model_name: Optional[str] = field(default="mistralai/Mistral-7B-Instruct-v0.1", metadata={"help": "The model name"})
+    model_name: Optional[str] = field(default="mistralai/Mistral-7B-Instruct-v0.2", metadata={"help": "The model name"})
     dataset_name: Optional[str] = field(
         default="Jotschi/german-news-titles", metadata={"help": "The dataset name"}
     )
@@ -48,7 +50,7 @@ class ScriptArguments:
     load_in_4bit: Optional[bool] = field(default=True, metadata={"help": "Load the model in 4 bits precision"})
     use_peft: Optional[bool] = field(default=True, metadata={"help": "Whether to use PEFT or not to train adapters"})
     trust_remote_code: Optional[bool] = field(default=False, metadata={"help": "Enable `trust_remote_code`"})
-    output_dir: Optional[str] = field(default="r256-b4-a16-seq512-l2.0e-5_prefix", metadata={"help": "The output directory"})
+    output_dir: Optional[str] = field(default=output_name, metadata={"help": "The output directory"})
     peft_lora_r: Optional[int] = field(default=256, metadata={"help": "The r parameter of the LoRA adapters"})
     peft_lora_alpha: Optional[int] = field(default=16, metadata={"help": "The alpha parameter of the LoRA adapters"})
     logging_steps: Optional[int] = field(default=25, metadata={"help": "The number of logging steps"})
@@ -71,9 +73,16 @@ coco_dataset = load_dataset(script_args.dataset_name)
 
 def prepare_dialogue(text, title, eos_token):
     sample = ""
-    sample += f"<|user|>\n{text}{eos_token}\n"
-    sample += f"<|assistant|>\n{title}{eos_token}\n"
+#    sample += f"<|user|>\n{text}{eos_token}\n"
+#    sample += f"<|assistant|>\n{title}{eos_token}\n"
+    instruction="Erstelle einen Titelvorschlag für den Text."
+    sample = 'Below is an instruction that describes a task, paired with an input that provides' \
+               ' further context. Write a response that appropriately completes the request.\n\n'
+    sample += f'### Instruction:\n{instruction}\n\n'
+    sample += f'### Input:\n{text}\n\n'
+    sample += f'### Response:\n{title}'
     return sample
+
 
 def chunk_examples(batch):
     all_samples = []
