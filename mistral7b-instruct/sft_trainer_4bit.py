@@ -18,11 +18,12 @@ from datasets import load_dataset, Features, Sequence, Value, DatasetDict
 from peft import LoraConfig
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig, HfArgumentParser, TrainingArguments, AutoTokenizer
-
+import wandb
 from trl import SFTTrainer
 
 
 # https://github.com/neuralwork/instruct-finetune-mistral/blob/main/finetune_model.py
+wandb.init(project="mistral7b-instruct-news-title")
 tqdm.pandas()
 
 output_name = "r256-b4-a16-seq512-l2.0e-5_reformat"
@@ -41,8 +42,8 @@ class ScriptArguments:
     dataset_text_field: Optional[str] = field(default="text", metadata={"help": "The text field of the dataset"})
     log_with: Optional[str] = field(default="wandb", metadata={"help": "Use 'wandb' to log with wandb"})
     learning_rate: Optional[float] = field(default=2.0e-5, metadata={"help": "The learning rate"})
-    batch_size: Optional[int] = field(default=4, metadata={"help": "The batch size"})
-    seq_length: Optional[int] = field(default=512, metadata={"help": "Input sequence length"})
+    batch_size: Optional[int] = field(default=2, metadata={"help": "The batch size"})
+    seq_length: Optional[int] = field(default=2048, metadata={"help": "Input sequence length"})
     gradient_accumulation_steps: Optional[int] = field(
         default=2, metadata={"help": "The number of gradient accumulation steps"}
     )
@@ -61,7 +62,7 @@ class ScriptArguments:
     )
     save_total_limit: Optional[int] = field(default=10, metadata={"help": "Limits total number of checkpoints."})
     push_to_hub: Optional[bool] = field(default=False, metadata={"help": "Push the model to HF Hub"})
-    hub_model_id: Optional[str] = field(default="output/mistral-7b-finetuned-ultrachat", metadata={"help": "The name of the model on HF Hub"})
+    hub_model_id: Optional[str] = field(default="output/mistral-7b-finetuned-chat", metadata={"help": "The name of the model on HF Hub"})
 
 
 parser = HfArgumentParser(ScriptArguments)
@@ -72,16 +73,26 @@ tokenizer = AutoTokenizer.from_pretrained(script_args.model_name)
 coco_dataset = load_dataset(script_args.dataset_name)
 
 def prepare_dialogue(text, title, eos_token):
-    sample = ""
-#    sample += f"<|user|>\n{text}{eos_token}\n"
-#    sample += f"<|assistant|>\n{title}{eos_token}\n"
     instruction="Erstelle einen Titelvorschlag für den Text."
-    sample = 'Below is an instruction that describes a task, paired with an input that provides' \
-               ' further context. Write a response that appropriately completes the request.\n\n'
+    blurb = 'Below is an instruction that describes a task, paired with an input that provides' \
+               ' further context. Write a response that appropriately completes the request.'
+    blurb2= 'Below is an instruction that describes a task. Write a response that appropriately completes the request.'
+    sample = blurb + '\n\n'
     sample += f'### Instruction:\n{instruction}\n\n'
     sample += f'### Input:\n{text}\n\n'
     sample += f'### Response:\n{title}'
-    return sample
+    
+    prompt_template = """
+{blurb}
+### Instruction:
+{instruction}
+### Input:
+{text}
+### Answer:
+{title}
+"""
+    return prompt_template.format(blurb=blurb, instruction=instruction, text=text, title=title)
+    
 
 
 def chunk_examples(batch):
@@ -97,6 +108,10 @@ def chunk_examples(batch):
 
 chunked_dataset = coco_dataset.map(chunk_examples, batched=True, num_proc=4,
                       remove_columns=["titles", "text"])
+
+#chunked_dataset = chunked_dataset.shuffle(seed=1234)  # Shuffle dataset here
+#chunked_dataset = chunked_dataset.map(lambda samples: tokenizer(samples["text"]), batched=True)
+
 
 ds_train = chunked_dataset['train'].train_test_split(test_size=0.2, seed=42)
 
