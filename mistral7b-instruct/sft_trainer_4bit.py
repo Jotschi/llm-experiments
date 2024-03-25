@@ -22,7 +22,7 @@ from transformers import AutoModelForCausalLM, BitsAndBytesConfig, HfArgumentPar
 from trl import SFTTrainer
 
 
-#https://github.com/neuralwork/instruct-finetune-mistral/blob/main/finetune_model.py
+# https://github.com/neuralwork/instruct-finetune-mistral/blob/main/finetune_model.py
 tqdm.pandas()
 
 output_name = "r256-b4-a16-seq512-l2.0e-5_reformat"
@@ -61,7 +61,7 @@ class ScriptArguments:
     )
     save_total_limit: Optional[int] = field(default=10, metadata={"help": "Limits total number of checkpoints."})
     push_to_hub: Optional[bool] = field(default=False, metadata={"help": "Push the model to HF Hub"})
-    hub_model_id: Optional[str] = field(default="mistral-7b-finetuned-ultrachat", metadata={"help": "The name of the model on HF Hub"})
+    hub_model_id: Optional[str] = field(default="output/mistral-7b-finetuned-ultrachat", metadata={"help": "The name of the model on HF Hub"})
 
 
 parser = HfArgumentParser(ScriptArguments)
