@@ -22,6 +22,6 @@ echo "Using name $NAME"
 
 python merge_peft_adapter.py \
     --peft_model_path=$PEFT_PATH \
-    --output_dir=models/$NAME-$2 \
+    --output_dir=models/$NAME \
     --base_model_name_or_path=$BASE_MODEL
 

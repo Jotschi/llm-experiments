@@ -26,7 +26,7 @@ from trl import SFTTrainer
 wandb.init(project="mistral7b-instruct-news-title")
 tqdm.pandas()
 
-output_name = "r256-b4-a16-seq512-l2.0e-5_reformat"
+output_name = "r256-b4-a16-seq512-l2.0e-5_reformat2"
 
 # Define and parse arguments.
 @dataclass
@@ -72,27 +72,43 @@ script_args = parser.parse_args_into_dataclasses()[0]
 tokenizer = AutoTokenizer.from_pretrained(script_args.model_name)
 coco_dataset = load_dataset(script_args.dataset_name)
 
+#def prepare_dialogue(text, title, eos_token):
+#    instruction="Erstelle einen Titelvorschlag für den Text."
+#    blurb = 'Below is an instruction that describes a task, paired with an input that provides' \
+#               ' further context. Write a response that appropriately completes the request.'
+#    blurb2= 'Below is an instruction that describes a task. Write a response that appropriately completes the request.'
+#    sample = blurb + '\n\n'
+#    sample += f'### Instruction:\n{instruction}\n\n'
+#    sample += f'### Input:\n{text}\n\n'
+#    sample += f'### Response:\n{title}'
+#    
+#    prompt_template = """
+#{blurb}
+#### Instruction:
+#{instruction}
+#### Input:
+#{text}
+#### Answer:
+#{title}
+#"""
+#    return prompt_template.format(blurb=blurb, instruction=instruction, text=text, title=title)
+ 
 def prepare_dialogue(text, title, eos_token):
-    instruction="Erstelle einen Titelvorschlag für den Text."
-    blurb = 'Below is an instruction that describes a task, paired with an input that provides' \
-               ' further context. Write a response that appropriately completes the request.'
-    blurb2= 'Below is an instruction that describes a task. Write a response that appropriately completes the request.'
-    sample = blurb + '\n\n'
-    sample += f'### Instruction:\n{instruction}\n\n'
-    sample += f'### Input:\n{text}\n\n'
-    sample += f'### Response:\n{title}'
-    
-    prompt_template = """
-{blurb}
-### Instruction:
-{instruction}
-### Input:
-{text}
-### Answer:
-{title}
-"""
-    return prompt_template.format(blurb=blurb, instruction=instruction, text=text, title=title)
-    
+  bos_token = "<s>"
+  system_message = "Use the provided input to create an instruction that could have been used to generate the response with an LLM."
+  eos_token = "</s>"
+
+  full_prompt = ""
+  full_prompt += bos_token
+  full_prompt += "### Instruction:"
+  full_prompt += "\n" + system_message
+  full_prompt += "\n\n### Input:"
+  full_prompt += "\n" + text
+  full_prompt += "\n\n### Response:"
+  full_prompt += "\n" + title
+  full_prompt += eos_token
+
+  return full_prompt
 
 
 def chunk_examples(batch):
