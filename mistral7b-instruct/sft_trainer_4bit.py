@@ -26,7 +26,7 @@ from trl import SFTTrainer
 wandb.init(project="mistral7b-instruct-news-title")
 tqdm.pandas()
 
-output_name = "r256-b4-a16-seq512-l2.0e-5_reformat2"
+output_name = "r256-b2-a16-seq4096-l2.0e-5_reformat-v1"
 
 # Define and parse arguments.
 @dataclass
@@ -35,7 +35,7 @@ class ScriptArguments:
     The name of the Casual LM model we wish to fine with SFTTrainer
     """
 
-    model_name: Optional[str] = field(default="mistralai/Mistral-7B-Instruct-v0.2", metadata={"help": "The model name"})
+    model_name: Optional[str] = field(default="mistralai/Mistral-7B-Instruct-v0.1", metadata={"help": "The model name"})
     dataset_name: Optional[str] = field(
         default="Jotschi/german-news-titles", metadata={"help": "The dataset name"}
     )
@@ -43,7 +43,7 @@ class ScriptArguments:
     log_with: Optional[str] = field(default="wandb", metadata={"help": "Use 'wandb' to log with wandb"})
     learning_rate: Optional[float] = field(default=2.0e-5, metadata={"help": "The learning rate"})
     batch_size: Optional[int] = field(default=2, metadata={"help": "The batch size"})
-    seq_length: Optional[int] = field(default=2048, metadata={"help": "Input sequence length"})
+    seq_length: Optional[int] = field(default=4096, metadata={"help": "Input sequence length"})
     gradient_accumulation_steps: Optional[int] = field(
         default=2, metadata={"help": "The number of gradient accumulation steps"}
     )

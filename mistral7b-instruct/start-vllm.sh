@@ -8,7 +8,7 @@ PORT=10300
 LLM_NAME=$(basename $1)
 LLM="/models/$LLM_NAME"
 IMAGE="vllm/vllm-openai"
-VERSION="v0.3.3"
+VERSION="v0.4.0"
 NAME=vllm
 
 if [ ! -e models/$LLM_NAME ] ; then

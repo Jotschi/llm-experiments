@@ -3,8 +3,8 @@ from peft import PeftModel
 
 device = "cuda" # the device to load the model onto
 
-model_path = "./r256-b4-a16-seq512-l2.0e-5_reformat2/checkpoint-500"
-base_model_id = "mistralai/Mistral-7B-Instruct-v0.2"
+model_path = "./r256-b2-a16-seq4096-l2.0e-5_reformat-v1/checkpoint-500"
+base_model_id = "mistralai/Mistral-7B-Instruct-v0.1"
 bnb_config = BitsAndBytesConfig(
     load_in_8bit=False, load_in_4bit=True
 )
