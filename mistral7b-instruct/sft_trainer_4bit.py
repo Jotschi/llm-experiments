@@ -14,7 +14,7 @@ from typing import Optional
 
 import torch
 from accelerate import Accelerator
-from datasets import load_dataset, Features, Sequence, Value, DatasetDict
+from datasets import load_dataset, DatasetDict
 from peft import LoraConfig
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig, HfArgumentParser, TrainingArguments, AutoTokenizer
@@ -26,7 +26,7 @@ from trl import SFTTrainer
 wandb.init(project="mistral7b-instruct-news-title")
 tqdm.pandas()
 
-output_name = "r256-b2-a16-seq4096-l2.0e-5_reformat-v1"
+output_name = "r256-b2-a16-seq4096-l2.0e-5_reformat3-v3"
 
 # Define and parse arguments.
 @dataclass
@@ -35,15 +35,15 @@ class ScriptArguments:
     The name of the Casual LM model we wish to fine with SFTTrainer
     """
 
-    model_name: Optional[str] = field(default="mistralai/Mistral-7B-Instruct-v0.1", metadata={"help": "The model name"})
+    model_name: Optional[str] = field(default="mistralai/Mistral-7B-Instruct-v0.2", metadata={"help": "The model name"})
     dataset_name: Optional[str] = field(
         default="Jotschi/german-news-titles", metadata={"help": "The dataset name"}
     )
     dataset_text_field: Optional[str] = field(default="text", metadata={"help": "The text field of the dataset"})
     log_with: Optional[str] = field(default="wandb", metadata={"help": "Use 'wandb' to log with wandb"})
     learning_rate: Optional[float] = field(default=2.0e-5, metadata={"help": "The learning rate"})
-    batch_size: Optional[int] = field(default=2, metadata={"help": "The batch size"})
-    seq_length: Optional[int] = field(default=4096, metadata={"help": "Input sequence length"})
+    batch_size: Optional[int] = field(default=4, metadata={"help": "The batch size"})
+    seq_length: Optional[int] = field(default=512, metadata={"help": "Input sequence length"})
     gradient_accumulation_steps: Optional[int] = field(
         default=2, metadata={"help": "The number of gradient accumulation steps"}
     )
@@ -69,9 +69,20 @@ parser = HfArgumentParser(ScriptArguments)
 script_args = parser.parse_args_into_dataclasses()[0]
 
 # Step 1: Load the dataset
-tokenizer = AutoTokenizer.from_pretrained(script_args.model_name)
+tokenizer = AutoTokenizer.from_pretrained(script_args.model_name,
+                                          trust_remote_code=True,
+                                          add_eos_token=True)
+tokenizer.pad_token = tokenizer.eos_token
+
+#tokenizer.padding_side = 'left'
+#tokenizer.pad_token = tokenizer.eos_token
+#tokenizer.add_eos_token = True
+
+#tokenizer.bos_token, tokenizer.eos_token
+
 coco_dataset = load_dataset(script_args.dataset_name)
 
+# Format V1
 #def prepare_dialogue(text, title, eos_token):
 #    instruction="Erstelle einen Titelvorschlag für den Text."
 #    blurb = 'Below is an instruction that describes a task, paired with an input that provides' \
@@ -93,22 +104,39 @@ coco_dataset = load_dataset(script_args.dataset_name)
 #"""
 #    return prompt_template.format(blurb=blurb, instruction=instruction, text=text, title=title)
  
+# Format V2
+#def prepare_dialogue(text, title, eos_token):
+#  bos_token = "<s>"
+#  system_message = "Use the provided input to create an instruction that could have been used to generate the response with an LLM."
+#  eos_token = "</s>"
+#
+#  full_prompt = ""
+#  full_prompt += bos_token
+#  full_prompt += "### Instruction:"
+#  full_prompt += "\n" + system_message
+#  full_prompt += "\n\n### Input:"
+#  full_prompt += "\n" + text
+#  full_prompt += "\n\n### Response:"
+#  full_prompt += "\n" + title
+#  full_prompt += eos_token
+#
+#  return full_prompt
+
+# Format V3
 def prepare_dialogue(text, title, eos_token):
   bos_token = "<s>"
   system_message = "Use the provided input to create an instruction that could have been used to generate the response with an LLM."
   eos_token = "</s>"
 
-  full_prompt = ""
-  full_prompt += bos_token
-  full_prompt += "### Instruction:"
-  full_prompt += "\n" + system_message
-  full_prompt += "\n\n### Input:"
-  full_prompt += "\n" + text
-  full_prompt += "\n\n### Response:"
-  full_prompt += "\n" + title
+  full_prompt = bos_token
+  full_prompt += "[INST]@Title. "
+  full_prompt += text
+  full_prompt += "[/INST]"
+  full_prompt += title
   full_prompt += eos_token
 
   return full_prompt
+
 
 
 def chunk_examples(batch):
@@ -124,9 +152,6 @@ def chunk_examples(batch):
 
 chunked_dataset = coco_dataset.map(chunk_examples, batched=True, num_proc=4,
                       remove_columns=["titles", "text"])
-
-#chunked_dataset = chunked_dataset.shuffle(seed=1234)  # Shuffle dataset here
-#chunked_dataset = chunked_dataset.map(lambda samples: tokenizer(samples["text"]), batched=True)
 
 
 ds_train = chunked_dataset['train'].train_test_split(test_size=0.2, seed=42)
@@ -146,21 +171,17 @@ ds_splits = DatasetDict({
 
 # Step 2: Load the model
 device_map = "auto"
-if script_args.load_in_8bit and script_args.load_in_4bit:
-    raise ValueError("You can't load the model in 8 bits and 4 bits at the same time")
-elif script_args.load_in_8bit or script_args.load_in_4bit:
-    quantization_config = BitsAndBytesConfig(
-        load_in_8bit=script_args.load_in_8bit, load_in_4bit=script_args.load_in_4bit
-    )
-    # Copy the model to each device
-    device_map = {"": Accelerator().local_process_index}
-    #device_map = None
-    torch_dtype = torch.bfloat16
-else:
-    device_map = {"": Accelerator().local_process_index}
-    #device_map = None
-    quantization_config = None
-    torch_dtype = None
+
+quantization_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type= "nf4",
+    bnb_4bit_compute_dtype= torch.bfloat16,
+    bnb_4bit_use_double_quant= False,
+)
+# Copy the model to each device
+device_map = {"": Accelerator().local_process_index}
+torch_dtype = torch.bfloat16
+
 
 print("Using device: " + str(device_map))
 model = AutoModelForCausalLM.from_pretrained(
@@ -171,6 +192,10 @@ model = AutoModelForCausalLM.from_pretrained(
     trust_remote_code=script_args.trust_remote_code,
     torch_dtype=torch_dtype,
 )
+
+model.config.use_cache = False
+model.config.pretraining_tp = 1
+
 
 print(device_map)
 print("Model: " + str(next(model.parameters()).device))
@@ -201,15 +226,14 @@ training_args = TrainingArguments(
 )
 
 # Step 4: Define the LoraConfig
-if script_args.use_peft:
-    peft_config = LoraConfig(
-        r=script_args.peft_lora_r,
-        lora_alpha=script_args.peft_lora_alpha,
-        bias="none",
-        task_type="CAUSAL_LM",
-    )
-else:
-    peft_config = None
+peft_config = LoraConfig(
+    lora_alpha=script_args.peft_lora_alpha,
+    lora_dropout=0.05,
+    r=script_args.peft_lora_r,
+    bias="none",
+    task_type="CAUSAL_LM",
+    target_modules=["q_proj", "v_proj"]
+)
 
 
 # Step 5: Define the Trainer
@@ -221,7 +245,7 @@ trainer = SFTTrainer(
     eval_dataset=ds_splits["test"],
     dataset_text_field=script_args.dataset_text_field,
     peft_config=peft_config,
-    packing=True,
+    packing=True
 )
 
 

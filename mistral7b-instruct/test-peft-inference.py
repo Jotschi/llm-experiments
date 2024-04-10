@@ -3,8 +3,8 @@ from peft import PeftModel
 
 device = "cuda" # the device to load the model onto
 
-model_path = "./r256-b2-a16-seq4096-l2.0e-5_reformat-v1/checkpoint-500"
-base_model_id = "mistralai/Mistral-7B-Instruct-v0.1"
+model_path = "./r256-b2-a16-seq4096-l2.0e-5_reformat3-v2/checkpoint-500"
+base_model_id = "mistralai/Mistral-7B-Instruct-v0.2"
 bnb_config = BitsAndBytesConfig(
     load_in_8bit=False, load_in_4bit=True
 )
@@ -27,14 +27,15 @@ Gegen 14.30 Uhr wurde die Austro Control darüber informiert, dass von einem Flu
 
 Die Zufahrt gestaltete sich schwierig, da das Waldstück nur über einen schmalen Weg erreichbar ist. „Die schmale Forststraße war nur in eine Richtung befahrbar, und es dauerte rund 25 Minuten, bis wir den Brandherd erreicht hatten“, so Einsatzleiter Gerhard Duchan."""
 
-eval_prompt = """Query:\n\n {} ###\n\n""".format(query)
-model_input = tokenizer(eval_prompt, return_tensors="pt").to("cuda")
+
+messages = [
+    {"role": "user", "content": "@Title. " + query}
+]
+
+model_input = tokenizer.apply_chat_template(messages, return_tensors="pt").to("cuda")
 
 ft_model = PeftModel.from_pretrained(base_model, model_path)
-output = ft_model.generate(input_ids=model_input["input_ids"].to(device),
-                           attention_mask=model_input["attention_mask"], 
-                           max_new_tokens=555, repetition_penalty=1.15)
-result = tokenizer.decode(output[0], skip_special_tokens=True).replace(eval_prompt, "")
+output = ft_model.generate(model_input, max_new_tokens=1000, do_sample=True, repetition_penalty=1.15)
 
-
-print(result)
+decoded = tokenizer.batch_decode(output)
+print(decoded[0])
