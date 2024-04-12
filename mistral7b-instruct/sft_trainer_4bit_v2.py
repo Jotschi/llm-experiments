@@ -3,7 +3,6 @@ from peft import LoraConfig, PeftModel, prepare_model_for_kbit_training, get_pef
 import os, torch, wandb, platform, warnings
 from datasets import load_dataset, DatasetDict
 from trl import SFTTrainer
-from huggingface_hub import notebook_login
 
 
 base_model = "mistralai/Mistral-7B-Instruct-v0.2"
@@ -62,10 +61,10 @@ ds_splits = DatasetDict({
 
 # Load base model(Mistral 7B)
 bnb_config = BitsAndBytesConfig(
-    load_in_4bit= True,
-    bnb_4bit_quant_type= "nf4",
-    bnb_4bit_compute_dtype= torch.bfloat16,
-    bnb_4bit_use_double_quant= False,
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.bfloat16,
+    bnb_4bit_use_double_quant=False,
 )
 model = AutoModelForCausalLM.from_pretrained(
     base_model,
@@ -79,7 +78,7 @@ model.gradient_checkpointing_enable()
 
 model = prepare_model_for_kbit_training(model)
 peft_config = LoraConfig(
-        r=16,
+        r=64,
         lora_alpha=16,
         lora_dropout=0.05,
         bias="none",
@@ -95,7 +94,7 @@ training_arguments = TrainingArguments(
     per_device_train_batch_size= 4,
     gradient_accumulation_steps= 2,
     optim = "paged_adamw_8bit",
-    save_steps= 1000,
+    save_steps=1000,
     logging_steps= 20,
     learning_rate= 2e-4,
     weight_decay= 0.001,
