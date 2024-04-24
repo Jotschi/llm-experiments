@@ -49,13 +49,13 @@ chunked_dataset = dataset.map(chunk_examples, batched=True, num_proc=4,
 
 
 
-def process(row):
-    row["text"] = tokenizer.apply_chat_template(row["text"], tokenize=False)
-    return row
+#def process(row):
+#    row["text"] = tokenizer.apply_chat_template(row["text"], tokenize=False)
+#    return row
+#
+#chunked_dataset = chunked_dataset.map(process, num_proc= 4, load_from_cache_file=False)
 
-chunked_dataset = chunked_dataset.map(process, num_proc= 4, load_from_cache_file=False)
-
-ds_train = dataset['train'].train_test_split(test_size=0.2, seed=42)
+ds_train = chunked_dataset['train'].train_test_split(test_size=0.2, seed=42)
 
 ds_splits = DatasetDict({
     'train': ds_train['train'],
