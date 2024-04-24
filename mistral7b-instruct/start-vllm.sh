@@ -27,7 +27,7 @@ docker run -d --shm-size 16G \
       -v $(pwd)/models:/models \
       $IMAGE:$VERSION \
       --model $LLM \
-      --max-model-len 28912 \
+      --max-model-len 4096 \
       --load-format safetensors
 
 #--quantization awq \

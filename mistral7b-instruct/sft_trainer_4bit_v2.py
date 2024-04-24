@@ -7,7 +7,7 @@ from trl import SFTTrainer
 
 base_model = "mistralai/Mistral-7B-Instruct-v0.2"
 dataset_name = "Jotschi/german-news-titles"
-new_model = "Jotschi/Mistral-7B-v0.2-german-news-titles"
+new_model = "Jotschi/Mistral-7B-v0.2-german-news-titles-v5"
 
 coco_dataset = load_dataset(dataset_name)
 
@@ -15,14 +15,14 @@ wandb.init(project="mistral7b-instruct-news-title")
 
 def prepare_dialogue(text, title, eos_token):
   bos_token = "<s>"
-  system_message = "Use the provided input to create an instruction that could have been used to generate the response with an LLM."
   eos_token = "</s>"
+  
+  text  = "Einstein gilt als einer der bedeutendsten Physiker der Wissenschaftsgeschichte und weltweit als einer der bekanntesten Wissenschaftler der Neuzeit."
+  title = "Albert Einstein war ein Genie!"
 
   full_prompt = bos_token
-  full_prompt += "[INST]@Title. "
-  full_prompt += text
-  full_prompt += "[/INST]"
-  full_prompt += title
+  full_prompt += "[INST] Erstelle einen Titelvorschlag für folgenden Artikel:\n" + text + "[/INST] "
+  full_prompt += "Titelvorschlag: " + title
   full_prompt += eos_token
 
   return full_prompt
@@ -34,6 +34,7 @@ tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.add_eos_token = True
 tokenizer.add_bos_token, tokenizer.add_eos_token
+tokenizer.padding_side = 'right'
 
 def chunk_examples(batch):
     all_samples = []
@@ -86,6 +87,7 @@ peft_config = LoraConfig(
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj","gate_proj"]
     )
 model = get_peft_model(model, peft_config)
+
 # Training Arguments
 # Hyperparameters should beadjusted based on the hardware you using
 training_arguments = TrainingArguments(
@@ -94,8 +96,8 @@ training_arguments = TrainingArguments(
     per_device_train_batch_size= 4,
     gradient_accumulation_steps= 2,
     optim = "paged_adamw_8bit",
-    save_steps=1000,
-    logging_steps= 20,
+    save_steps=50,
+    logging_steps= 25,
     learning_rate= 2e-4,
     weight_decay= 0.001,
     fp16= False,

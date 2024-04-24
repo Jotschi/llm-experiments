@@ -1,9 +1,9 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 import sys
 
-model_path = sys.argv[1]
 device = "cuda" # the device to load the model onto
 
+model_path = sys.argv[1]
 model_path = "./" + model_path
 
 quantization_config = BitsAndBytesConfig(
