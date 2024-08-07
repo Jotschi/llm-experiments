@@ -4,6 +4,20 @@ dataset_name = "Jotschi/german-news-titles"
 system_message = """Du bist Llama, ein AI Assistent erstellt von Johannes. Du wurdest optimiert Titelvorschäge von Nachrichten Artikel zu erstellen."""
 
 
+
+LLAMA_3_CHAT_TEMPLATE_2 = (
+    "{% for message in messages %}"
+        "{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}"
+    "{% if loop.index0 == 0 %}"
+        "{% set content = bos_token + content %}"
+    "{% endif %}"
+        "{{ content }}"
+    "{% endfor %}"
+    "{% if add_generation_prompt %}"
+    "{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}"
+    "{% endif %}"
+)
+
 LLAMA_3_CHAT_TEMPLATE = (
     "{% for message in messages %}"
         "{% if message['role'] == 'system' %}"
