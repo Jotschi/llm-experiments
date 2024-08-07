@@ -10,7 +10,7 @@ device = "cuda" # the device to load the model onto
 model_path = sys.argv[1]
 model_path = "./" + model_path
 
-base_model_id = "mistralai/Mistral-7B-Instruct-v0.2"
+base_model_id = "mistralai/Mistral-7B-Instruct-v0.3"
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
     bnb_4bit_quant_type= "nf4",
@@ -22,9 +22,9 @@ bnb_config = BitsAndBytesConfig(
 # Load tokenizer
 tokenizer = AutoTokenizer.from_pretrained(base_model_id, trust_remote_code=True)
 tokenizer.pad_token = tokenizer.eos_token
-tokenizer.add_eos_token = True
-tokenizer.add_bos_token, tokenizer.add_eos_token
-tokenizer.padding_side = 'right'
+#tokenizer.add_eos_token = True
+#tokenizer.add_bos_token, tokenizer.add_eos_token
+#tokenizer.padding_side = 'right'
 
 
 base_model = AutoModelForCausalLM.from_pretrained(
@@ -39,7 +39,7 @@ generation_config = GenerationConfig(
     do_sample=True,
     top_k=1,
     temperature=0.1,
-    max_new_tokens=25,
+    max_new_tokens=250,
     pad_token_id=tokenizer.pad_token_id
 )
 
@@ -71,6 +71,7 @@ model_input = tokenizer.apply_chat_template(messages, return_tensors="pt").to("c
 
 outputs = ft_model.generate(model_input, generation_config=generation_config)
 answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
+print("------------")
 print(answer)
 #
 #ft_model = PeftModel.from_pretrained(base_model, model_path)

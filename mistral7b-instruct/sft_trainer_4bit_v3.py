@@ -36,8 +36,8 @@ tokenizer.pad_token = tokenizer.eos_token
 
 def prepare_dialogue(text, title):
   
-  text  = "Einstein gilt als einer der bedeutendsten Physiker der Wissenschaftsgeschichte und weltweit als einer der bekanntesten Wissenschaftler der Neuzeit."
-  title = "Albert Einstein war ein Genie!"
+  #text  = "Einstein gilt als einer der bedeutendsten Physiker der Wissenschaftsgeschichte und weltweit als einer der bekanntesten Wissenschaftler der Neuzeit."
+  #title = "Albert Einstein war ein Genie!"
 
   chat = [
        #{"role": "user", "content": examples["text"]},
