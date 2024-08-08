@@ -166,7 +166,6 @@ trainer = SFTTrainer(
     max_seq_length=max_seq_length,
     tokenizer=tokenizer,
     packing=True,
-    
 )
 
 #dataset_kwargs={
