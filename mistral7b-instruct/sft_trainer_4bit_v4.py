@@ -5,7 +5,7 @@ from datasets import load_dataset, DatasetDict
 from trl import SFTTrainer
 
 
-base_model = "mistralai/Mistral-7B-Instruct-v0.3"
+base_model = "mistralai/Mistral-7B-Instruct-v0.1"
 dataset_name = "Jotschi/german-news-titles"
 new_model = "Jotschi/Mistral-7B-v0.2-german-news-titles-v5"
 
@@ -54,8 +54,8 @@ tokenizer.pad_token = tokenizer.eos_token
 
 def prepare_dialogue(text, title):
   
-  #text  = "Einstein gilt als einer der bedeutendsten Physiker der Wissenschaftsgeschichte und weltweit als einer der bekanntesten Wissenschaftler der Neuzeit."
-  #title = "Albert Einstein war ein Genie!"
+#  text  = "Einstein gilt als einer der bedeutendsten Physiker der Wissenschaftsgeschichte und weltweit als einer der bekanntesten Wissenschaftler der Neuzeit."
+#  title = "Albert Einstein war ein Genie!"
 
   chat = [
        #{"role": "user", "content": examples["text"]},

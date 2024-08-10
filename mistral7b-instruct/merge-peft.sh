@@ -8,7 +8,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 . $SCRIPT_DIR/venv/bin/activate
 
-BASE_MODEL="mistralai/Mistral-7B-Instruct-v0.3"
+BASE_MODEL="mistralai/Mistral-7B-Instruct-v0.1"
 PEFT_PATH="$1"
 NAME="$2"
 
@@ -18,8 +18,7 @@ if [ ! -e $PEFT_PATH ] ; then
 fi
 
 
-echo "Using name $NAME"
-
+echo "Merging PEFT $PEFT_PATH into model with name $NAME"
 python merge_peft_adapter.py \
     --peft_model_path=$PEFT_PATH \
     --output_dir=models/$NAME \
