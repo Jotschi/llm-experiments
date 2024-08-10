@@ -1,9 +1,6 @@
-#!pip install wandb -qqq
-import logging
 from dataclasses import dataclass, field
 import os
 import random
-import wandb
 import torch
 from datasets import load_dataset, DatasetDict
 from transformers import AutoTokenizer, TrainingArguments
@@ -20,10 +17,10 @@ from peft import LoraConfig
 from trl import (SFTTrainer)
 
 
-wandb.init(project="mistral7b-instruct-test")
+#wandb.init(project="mistral7b-instruct-test")
 
 # Parameters
-model_id = "mistralai/Mistral-7B-Instruct-v0.3"
+model_id = "mistralai/Mistral-7B-Instruct-v0.1"
 max_seq_length=256
 dataset_name="Jotschi/kleiner-astronaut"
 
@@ -50,7 +47,7 @@ dataset = load_dataset(dataset_name)
 training_arguments = TrainingArguments(
     output_dir= "./results",
     num_train_epochs= 1,
-    per_device_train_batch_size= 2,
+    per_device_train_batch_size= 4,
     gradient_accumulation_steps= 2,
     optim = "paged_adamw_8bit",
     save_steps=50,
@@ -64,9 +61,8 @@ training_arguments = TrainingArguments(
     warmup_ratio= 0.3,
     group_by_length= True,
     lr_scheduler_type= "constant",
-    report_to="wandb"
+    report_to="none"
 )
-
 
 ################
 # Tokenizer
@@ -126,7 +122,7 @@ if training_arguments.gradient_checkpointing:
     
     
     
-    # ACCELERATE_USE_FSDP=1 FSDP_CPU_RAM_EFFICIENT_LOADING=1 torchrun --nproc_per_node=4 ./scripts/run_fsdp_qlora.py --config llama_3_70b_fsdp_qlora.yaml
+# ACCELERATE_USE_FSDP=1 FSDP_CPU_RAM_EFFICIENT_LOADING=1 torchrun --nproc_per_node=4 ./scripts/run_fsdp_qlora.py --config llama_3_70b_fsdp_qlora.yaml
 
 ################
 # PEFT
@@ -189,4 +185,4 @@ trainer.train()
 if trainer.is_fsdp_enabled:
     trainer.accelerator.state.fsdp_plugin.set_state_dict_type("FULL_STATE_DICT")
 trainer.save_model()
-wandb.finish()
+#wandb.finish()

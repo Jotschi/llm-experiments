@@ -58,7 +58,6 @@ def prepare_dialogue(text, title):
 #  title = "Albert Einstein war ein Genie!"
 
   chat = [
-       #{"role": "user", "content": examples["text"]},
        {"role": "user", "content": "Erstelle einen Titelvorschlag für folgenden Artikel:\n" + text},
        {"role": "assistant", "content": "Titelvorschlag: " + title},
     ]
