@@ -21,10 +21,10 @@ bnb_config = BitsAndBytesConfig(
 
 # Load tokenizer
 tokenizer = AutoTokenizer.from_pretrained(base_model_id, trust_remote_code=True)
-tokenizer.pad_token = tokenizer.eos_token
+#tokenizer.pad_token = tokenizer.eos_token
 #tokenizer.add_eos_token = True
 #tokenizer.add_bos_token, tokenizer.add_eos_token
-#tokenizer.padding_side = 'right'
+tokenizer.padding_side = 'right'
 
 
 base_model = AutoModelForCausalLM.from_pretrained(
@@ -57,9 +57,10 @@ ft_model = PeftModel.from_pretrained(base_model, model_path)
 #query = "Albert Einstein (* 14. März 1879 in Ulm; † 18. April 1955 in Princeton, New Jersey) war ein schweizerisch-US-amerikanischer theoretischer Physiker deutscher Herkunft. Der Wissenschaftler jüdischer Abstammung hatte bis 1896 die württembergische Staatsbürgerschaft, ab 1901 die Schweizer Staatsbürgerschaft und ab 1940 zusätzlich die US-amerikanische. Preußischer Staatsangehöriger war er von 1914 bis 1934."
 
 text  = "Einstein gilt als einer der bedeutendsten Physiker der Wissenschaftsgeschichte und weltweit als einer der bekanntesten Wissenschaftler der Neuzeit."
+
+text="Die Nachricht vom Tod des Bauunternehmers und Reality-TV-Stars Richard Lugner hat am Montag innerhalb kurzer Zeit österreichweit zahlreiche Reaktionen der Trauer ausgelöst - vom Bundespräsidenten abwärts und durch alle politischen Lager." 
+text="Trotz Verzögerungen beim Bau hat das Regierungskabinett in Indonesien heute erstmals in der künftigen Hauptstadt Nusantara auf der Insel Borneo getagt. Auf Wunsch des Präsidenten Joko Widodo reisten für die Sitzung Dutzende indonesische Beamte in die neu gebaute Stadt. „Nicht alle Staaten haben die Möglichkeit und die Fähigkeit, bei null anzufangen und ihre Hauptstadt neu zu bauen“, betonte Widodo."
 query = "Erstelle einen Titelvorschlag für folgenden Artikel:\n" + text
-
-
 
 
 messages = [

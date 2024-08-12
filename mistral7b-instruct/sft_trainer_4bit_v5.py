@@ -21,8 +21,8 @@ training_arguments = TrainingArguments(
     per_device_train_batch_size= 4,
     gradient_accumulation_steps= 2,
     optim = "paged_adamw_8bit",
-    save_steps=50,
-    logging_steps= 25,
+    save_steps=100,
+    logging_steps= 50,
     learning_rate= 2e-4,
     weight_decay= 0.001,
     fp16= False,
@@ -39,13 +39,12 @@ training_arguments = TrainingArguments(
 # Tokenizer
 ################
 
-
 # Load tokenizer
 tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
-tokenizer.pad_token = tokenizer.eos_token
-#tokenizer.add_eos_token = True
+##tokenizer.add_eos_token = True
 #tokenizer.add_bos_token, tokenizer.add_eos_token
-#tokenizer.padding_side = 'right'
+tokenizer.pad_token = tokenizer.eos_token
+tokenizer.padding_side = "left"
 
 ################
 # Dataset
@@ -54,15 +53,15 @@ tokenizer.pad_token = tokenizer.eos_token
 
 def prepare_dialogue(text, title):
   
-  text  = "Einstein gilt als einer der bedeutendsten Physiker der Wissenschaftsgeschichte und weltweit als einer der bekanntesten Wissenschaftler der Neuzeit."
-  title = "Albert Einstein war ein Genie!"
+  #text  = "Einstein gilt als einer der bedeutendsten Physiker der Wissenschaftsgeschichte und weltweit als einer der bekanntesten Wissenschaftler der Neuzeit."
+  #title = "Albert Einstein war ein Genie!"
 
   chat = [
        {"role": "user", "content": "Erstelle einen Titelvorschlag für folgenden Artikel:\n" + text},
        {"role": "assistant", "content": "Titelvorschlag: " + title},
     ]
   
-  return tokenizer.apply_chat_template(chat, tokenize=False) + tokenizer.eos_token
+  return tokenizer.apply_chat_template(chat, tokenize=False)
 
 
 def chunk_examples(batch):
